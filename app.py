@@ -90,12 +90,23 @@ def analyze_image(image, question, model_choice, system_prompt):
 
     return chat_completion.choices[0].message.content
 
+def parse_groq_stream(stream):
+    for chunk in stream:
+        if chunk.choices:
+            if chunk.choices[0].delta.content is not None:
+                yield chunk.choices[0].delta.content
+
+
 def chat_with_assistant(messages, model_choice):
-    chat_completion = client.chat.completions.create(
+    response = client.chat.completions.with_streaming_response.create(
         messages=messages,
         model=model_choice,
     )
-    return chat_completion.choices[0].message.content
+    
+    for chunk in response:  # Iterate over streamed response chunks
+        if 'choices' in chunk:
+            for choice in chunk['choices']:
+                yield choice['message']['content']  # Yield the content for incremental display
 
 def main():
     st.set_page_config(layout="wide")
@@ -107,7 +118,7 @@ def main():
     if 'vision_system_prompt' not in st.session_state:
         st.session_state.vision_system_prompt = "You are an AI assistant that analyzes images. Describe the image in detail."
     if 'chat_system_prompt' not in st.session_state:
-        st.session_state.chat_system_prompt = "You are an AI assistant that helps analyze and discuss images. You have been provided with descriptions of some images."
+        st.session_state.chat_system_prompt = "You are an AI assistant that helps analyze and discuss images. You have been provided with some images that you already viewed and described to later answer questions about."
 
     uploaded_files = st.file_uploader("Upload images", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
 
@@ -176,14 +187,40 @@ def main():
         user_message = st.chat_input("Type your message here...")
 
         if user_message:
+            # Append the user's message to session state and display it immediately
             st.session_state['messages'].append({'role': 'user', 'content': user_message})
+
+            # Display the user's message in the chat interface
+            with st.chat_message("user"):
+                st.markdown(user_message)
 
             # Append the descriptions to the messages before sending to the assistant
             assistant_messages = st.session_state['messages'].copy()
             assistant_messages.insert(1, {'role': 'assistant', 'content': st.session_state['descriptions_as_string']})
 
-            assistant_reply = chat_with_assistant(assistant_messages, 'llama-3.1-70b-versatile')
-            st.session_state['messages'].append({'role': 'assistant', 'content': assistant_reply})
+            # Create the Groq stream and parse it with `parse_groq_stream`
+            stream = client.chat.completions.create(
+                model="llama-3.1-70b-versatile",
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in assistant_messages
+                ],
+                temperature=0.3,
+                stream=True,
+            )
+
+            # Use a placeholder for the assistant's streaming response
+            with st.chat_message("assistant"):
+                assistant_reply_placeholder = st.empty()  # Placeholder for streaming text
+                assistant_reply_text = ""
+
+                # Stream the assistant's response token by token
+                for token in parse_groq_stream(stream):
+                    assistant_reply_text += token  # Append each token to the text
+                    assistant_reply_placeholder.markdown(assistant_reply_text)  # Update the placeholder progressively
+
+            # After streaming is complete, add the full assistant's reply to session state
+            st.session_state['messages'].append({'role': 'assistant', 'content': assistant_reply_text})
 
             # Rerun to display the new messages
             st.rerun()
