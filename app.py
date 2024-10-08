@@ -205,7 +205,6 @@ def main():
                     {"role": m["role"], "content": m["content"]}
                     for m in assistant_messages
                 ],
-                temperature=0.3,
                 stream=True,
             )
 
