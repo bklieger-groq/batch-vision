@@ -1,4 +1,4 @@
-# Batch Vision Powered By Groq: Chat with a Collection of Images!
+# Batch Vision Powered By Groq: Chat with a Collection of Images
 
 [Video Demo](https://github.com/user-attachments/assets/ee9d1899-ed91-40a4-9e73-d754d266db94)
 
