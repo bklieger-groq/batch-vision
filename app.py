@@ -112,7 +112,7 @@ def main():
     st.set_page_config(layout="wide")
 
     st.title("Groq Batch Vision")
-    st.image("imgs/powered-by-groq.svg", width=300)
+    st.image("imgs/groqlabs_logo-black-orange.svg", width=300)
 
     # Initialize session state for settings
     if 'vision_system_prompt' not in st.session_state:
