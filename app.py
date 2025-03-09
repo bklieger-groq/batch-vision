@@ -132,7 +132,7 @@ def main():
                 with cols[idx % 3]:
                     image = Image.open(uploaded_file)
                     compressed_image = compress_image(image)
-                    st.image(compressed_image, caption=f"{uploaded_file.name} (Compressed)", use_column_width=True, width=200)
+                    st.image(compressed_image, caption=f"{uploaded_file.name} (Compressed)", use_container_width=True, width=200)
 
         run_button = st.button("Run Analysis")
 
