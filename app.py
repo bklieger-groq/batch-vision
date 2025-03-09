@@ -200,7 +200,7 @@ def main():
 
             # Create the Groq stream and parse it with `parse_groq_stream`
             stream = client.chat.completions.create(
-                model="llama-3.1-70b-versatile",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": m["role"], "content": m["content"]}
                     for m in assistant_messages
